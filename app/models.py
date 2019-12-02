@@ -56,6 +56,15 @@ class Post(db.Model):
     category = db.Column(db.String)
     like=db.Column(db.Integer)
     posted = db.Column(db.DateTime,default=datetime.utcnow) #utc is the universal world standard time
+    
+     def save_post(self):
+        db.session.add(self)
+        db.session.commit()
+
+    @classmethod
+    def get_posts(cls,id):
+        posts=Post.query.filter_by(post_id=id).all()
+        return posts
 
 
 

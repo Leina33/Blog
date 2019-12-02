@@ -46,7 +46,16 @@ class Subscriber(db.Model):
     def save_subscriber(self):
         db.session.add(self)
         db.session.commit()
+class Post(db.Model):
+    __tablename__ = 'posts'
 
+    id = db.Column(db.Integer,primary_key=True)
+    post_id=db.Column(db.Integer)
+    title = db.Column(db.String)
+    post = db.Column(db.String)
+    category = db.Column(db.String)
+    like=db.Column(db.Integer)
+    posted = db.Column(db.DateTime,default=datetime.utcnow)
 
 
 

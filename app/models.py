@@ -60,11 +60,17 @@ class Post(db.Model):
      def save_post(self):
         db.session.add(self)
         db.session.commit()
+        
+     @classmethod
+    def get_posts(cls,id):
+        posts=Post.query.filter_by(post_id=id).all()
+        return posts
 
     @classmethod
     def get_posts(cls,id):
         posts=Post.query.filter_by(post_id=id).all()
         return posts
+    
 
 
 

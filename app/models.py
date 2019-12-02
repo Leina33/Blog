@@ -55,7 +55,7 @@ class Post(db.Model):
     post = db.Column(db.String)
     category = db.Column(db.String)
     like=db.Column(db.Integer)
-    posted = db.Column(db.DateTime,default=datetime.utcnow)
+    posted = db.Column(db.DateTime,default=datetime.utcnow) #utc is the universal world standard time
 
 
 

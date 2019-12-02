@@ -6,7 +6,7 @@
 <div class="col-md-8">
 
   {{wtf.quick_form(registration_form)}}
-
+  <p>Already have an account? Login<a href="{{url_for('auth.login')}}"> here</a>.</p>
  </div>
 
 {% endblock%}

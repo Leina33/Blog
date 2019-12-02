@@ -1,4 +1,4 @@
-rom app import main
+from app import main
 
 if __name__ == '__main__':
-    app.manage(debug = True)
+    main.manage(debug =True)

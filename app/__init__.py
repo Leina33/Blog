@@ -29,8 +29,6 @@ def create_app(config_name):
     login_manager.init_app(app)
     mail.init_app(app)
     simple.init_app(app)
-
-    # Will add the views and forms
     
     # Registering the blueprint
     from .main import main as main_blueprint

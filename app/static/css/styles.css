@@ -41,7 +41,7 @@ li a {
   font-size: 40px;
 }
 li a:hover {
-  background-color: #111;
+  background-color: #ddd;
 }
 input[type="text"],
 select {

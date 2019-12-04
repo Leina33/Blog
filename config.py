@@ -1,21 +1,24 @@
 import os
-
-class Config:
-    SECRET_KEY ='dominic'
-    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://moringa:dominic@localhost/blog'
-    
-
-
-
-class ProdConfig(Config):
+basedir = os.path.abspath(os.path.dirname(__file__))
+class Config(object):
+     DEBUG = False
+     TESTING = False
+     SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://moringa:dominic@localhost/blog'
+     QUOTES_API = 'http://quotes.stormconsultancy.co.uk/random.json'
+     SECRET_KEY = os.environ.get('SECRET_KEY')
+     SQLALCHEMY_TRACK_MODIFICATIONS = True
+     UPLOADED_PHOTOS_DEST='app/static/photos'
+class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
 
-
-class DevConfig(Config):
+class DevelopmentConfig(Config):
+    DEVELOPMENT = True
     DEBUG = True
-
-
+    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://moringa:dominic@localhost/blog'
+class TestingConfig(Config):
+    TESTING = True
 config_options = {
-'development':DevConfig,
-'production':ProdConfig
+'test':TestingConfig,
+'production':ProductionConfig,
+'development': DevelopmentConfig
 }

@@ -1,98 +1,89 @@
-from flask import render_template,request,redirect,url_for,abort
+from flask import Flask,render_template , url_for,request,redirect
 from . import main
-from .forms import PostForm,SubscriberForm,CommentForm,UpdateProfile
-from .. import db,photos
-from ..models import User,Post,Role,Subscriber,Comment
 from flask_login import login_required,current_user
-import markdown2
-from ..email import mail_message
-from ..request import get_quote
-
-@main.route("/",methods=['GET','POST'])
-def index():
-    """
-    View root page function that returns the index page and its data
-    """
-    posts = Post.query.all()
-    form = SubscriberForm()
-    if form.validate_on_submit():
-        email = form.email.data
-
-        new_subscriber=Subscriber(email=email)
-        new_subscriber.save_subscriber()
-
-        mail_message("Subscribed to my  Blog","email/welcome_subscriber",new_subscriber.email,subscriber=new_subscriber)
-
-    title = "Blog"
-    name  = "Quote"
-    quote = get_quote()
-    
-    return render_template('index.html',title=title,posts=posts,subscriber_form=form,name=name,quote=quote)
-
-@main.route('/user/<uname>')
+from app.models import User,Post,Comment
+from .. import db,photos
+from app.requests import get_Quotes
+@main.route('/')
+def home():
+    quotes=get_Quotes()
+    print(quotes)
+    return render_template('index.html',quotes=quotes)
+@main.route('/display_all', methods= ['POST','GET'])
+def displayposts():
+     posts = Post.query.all()
+     quote = get_Quotes()
+     print(quote)
+     return render_template('display_posts.html',posts=posts,quote=quote)
+@main.route('/subscribe')
+def subscribe():
+    return render_template('subcription.html',title='Subscribe')
+@main.route('/profile/<username>')
 @login_required
-def profile(uname):
-    user = User.query.filter_by(username = uname).first()
-
-    if user is None:
-        abort(404)
-
-    return render_template("profile/profile.html", user = user)
-
-@main.route('/user/<uname>/update/pic',methods= ['POST'])
+def profile(username):
+    user = User.query.filter_by(username = username).first()
+    return render_template('profile.html',title='Profile',user=user)
+@main.route('/write_post/new',methods= ['POST','GET'])
 @login_required
-def update_pic(uname):
-    user = User.query.filter_by(username = uname).first()
+def write_post():
+    if request.method == 'POST':
+        form = request.form
+        title = form.get("title")
+        content = form.get("content")
+        category= form.get("category")
+        if  title==None or content==None :
+            error = "Post must have some content and title"
+            return render_template('write_post.html', error=error)
+        else:
+            post = Post( title=title,content=content,category=category,author = current_user.username, user_id= current_user.id)
+            post.save_post()
+            return redirect(url_for("main.displayposts"))
+    return render_template('write_post.html',title='Write')
+@main.route('/<username>/update/pic', methods = ['POST'])
+@login_required
+def update_profile_pic(username):
+    user = User.query.filter_by(username = username).first()
     if 'photo' in request.files:
         filename = photos.save(request.files['photo'])
         path = f'photos/{filename}'
-        user.profile_pic_path = path
+        user.profile_img = path
         db.session.commit()
-    return redirect(url_for('main.profile',uname=uname))
-
-
-@main.route("/new_post",methods=['GET','POST'])
+    return redirect(url_for('main.profile', username = username))
+@main.route('/display_all/update_post/<int:post_id>')
 @login_required
-def new_post():
-    form = PostForm()
-    if form.validate_on_submit():
-        title = form.title.data
-        post = form.post.data
-        category = form.category.data
-        new_post=Post(title=title,post=post,category=category)
-
-        new_post.save_post()
-
-        subscribers=Subscriber.query.all()
-
-        for subscriber in subscribers:
-            mail_message("New Blog Post","email/new_post",subscriber.email,post=new_post)
-
-        return redirect(url_for('main.index'))
-
-    title="Make a post"
-    return render_template('new_post.html',title=title,post_form=form)
-
-@main.route("/post/<int:id>",methods=['GET','POST'])
-def post(id):
-    post=Post.query.get_or_404(id)
-    comment = Comment.query.all()
-    form=CommentForm()
-
-    if request.args.get("like"):
-        post.like = post.like+1
-
-        db.session.add(post)
-        db.session.commit()
-
-        return redirect("/post/{post_id}".format(post_id=post.id))
-
-    if form.validate_on_submit():
-        comment=form.comment.data
-        new_comment = Comment(id=id,comment=comment,user_id=current_user.id,post_id=post.id)
-
-        new_comment.save_comment()
-
-        return redirect("/post/{post_id}".format(post_id=post.id))
-
-    return render_template('post.html',post=post,comments=comment,comment_form=form)
+def update_post(post_id):
+    return redirect(url_for('main.displayposts'))
+@main.route('/delete_post/<int:post_id>',methods= ['POST','GET'])
+@login_required
+def delete_post(post_id):
+    post= Post.query.filter_by(id = post_id).first()
+    post.delete_post()
+    return redirect(url_for('main.displayposts'))
+@main.route("/post/<int:post_id>")
+def post(post_id):
+    post = Post.query.get_or_404(post_id)
+    comments = Comment.query.filter_by(post_id = post_id)
+    return render_template('post.html', title=post.title, post=post,comments=comments)
+@main.route('/post/<int:post_id>',methods= ['POST','GET'])
+def comment(post_id):
+    if request.method == 'POST':
+        form = request.form
+        name = form.get("name")
+        content = form.get("content")
+        email= form.get("email")
+        if  name==None or content==None or email == None:
+            error = "Comment needs name ,content and email"
+            return render_template('write_post.html', error=error)
+        else:
+            comment = Comment( name=name,content=content,email=email,post_id= post_id)
+            comment.save_comment()
+            comments= Comment.query.filter_by(post_id=post_id).all()
+            post = Post.query.get_or_404(post_id)
+            return render_template('post.html',comments=comments,post=post)
+    return render_template('post.html',comments=comments,post=post)
+@main.route('/delete_comment/<int:post_id>',methods= ['POST','GET'])
+@login_required
+def delete_comment(post_id):
+    comment= Comment.query.filter_by(post_id = post_id).first()
+    comment.delete_comment()
+    return redirect(url_for('main.post',post_id=post_id))

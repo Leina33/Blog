@@ -44,6 +44,7 @@ class Post(db.Model):
         db.session.commit()
     def __repr__(self):
         return "Post:%s"%str(self.title)
+    
 class Comment(db.Model):
     __tablename__ = 'comments'
     id = db.Column(db.Integer, primary_key = True)
